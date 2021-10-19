@@ -59,7 +59,7 @@ def add_features(df):
     do some feature engineering
     """
 
-    # add length of names, as longer names correspond to more import (or more spanish) people
+    # add length of names, as longer names correspond to more important (or more spanish) people
     df["name_len"] = df.apply(lambda row: len(row.Name), axis=1)
 
     # add label-encoded title (Mr, Mrs, Miss, Dr, ...)
