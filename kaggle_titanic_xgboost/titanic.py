@@ -3,11 +3,16 @@ Baseline solution to the kaggle titanic problem (binary classification) using XG
 
 Things to improve:
     - Feature Engineering
+        - make family groups
+        - use character of cabin feature (represents deck)
+        - use whole Name (maybe with word2vec)
+        - make pclass categorical
     - Cross validation
     - Hyperparameter tuning
+    - pre-processing data (i.e. fill in missing values)
     - ...
 
-current Kaggle score: 0.75837
+current Kaggle score: 0.77990
 
 competition:
 https://www.kaggle.com/c/titanic/overview
@@ -17,6 +22,7 @@ import xgboost as xgb
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder
 
 id = "PassengerId"
 label = "Survived"
@@ -42,16 +48,35 @@ def get_df(filename, train=True):
     # one hot encode categorical columns
     onehot_df = X[to_one_hot_cols]
     onehot_df = pd.get_dummies(X[to_one_hot_cols])
-    # remove other categorical columns
-    X = X.drop(categorical_cols, axis=1)
     # append one hot encoded columns
     X = pd.concat([X, onehot_df], axis=1)
 
     return X, Y, ids
 
 
+def add_features(df):
+    """
+    do some feature engineering
+    """
+
+    # add length of names, as longer names correspond to more import (or more spanish) people
+    df["name_len"] = df.apply(lambda row: len(row.Name), axis=1)
+
+    # add label-encoded title (Mr, Mrs, Miss, Dr, ...)
+    label_encode = df["Name"]
+    label_encode = label_encode.apply(lambda name: name.split(', ')[
+        1].split(' ')[0]).to_frame()
+    label_encode = label_encode.apply(LabelEncoder().fit_transform)
+    df = pd.concat([df, label_encode], axis=1)
+
+    # remove other categorical columns
+    df = df.drop(categorical_cols, axis=1)
+    return df
+
+
 # read train data
 X_train, Y_train, _ = get_df("data/train.csv", train=True)
+X_train = add_features(X_train)
 
 # split into train/validation data
 X_train, X_val, Y_train, Y_val = train_test_split(
@@ -77,13 +102,14 @@ preds = model.predict(D_val)
 
 # evaluate model on validation set and print metrics
 best_preds = np.asarray([np.argmax(line) for line in preds])
-print("Accuracy = {}".format(accuracy_score(Y_val, best_preds)))
+print("Val. acccuracy = {}".format(accuracy_score(Y_val, best_preds)))
 
 # predicting test set and create submission file
 with open("submission.txt", 'w') as outfile:
     outfile.write(id + ',' + label + '\n')
 
     X_test, Y_train, ids = get_df("data/test.csv", train=False)
+    X_test = add_features(X_test)
 
     D_test = xgb.DMatrix(X_test)
     preds = model.predict(D_test)
