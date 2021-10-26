@@ -1,28 +1,20 @@
 """
-Baseline solution to the kaggle titanic problem (binary classification) using XGBOOST.
+Apply some standard ML algorithms to the kaggle titanic problem (binary classification).
 
-Things to improve:
-    - Feature Engineering
-        - make family groups
-        - use character of cabin feature (represents deck)
-        - use whole Name (maybe with word2vec)
-        - make pclass categorical
-    - Cross validation
-    - Hyperparameter tuning
-    - pre-processing data (i.e. fill in missing values)
-    - ...
+Currently implemented: XGBOOST, Random Forest
 
-current Kaggle score: 0.77990
+current Kaggle scores: 
+    - XGBOOST: 0.77990
+    - Random Forest 0.76555
 
 competition:
 https://www.kaggle.com/c/titanic/overview
 """
 import pandas as pd
-import xgboost as xgb
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
+from Classifiers import classifierFactory
 
 id = "PassengerId"
 label = "Survived"
@@ -37,6 +29,10 @@ def get_df(filename, train=True):
     '''
     # read train data
     X = pd.read_csv(filename)
+
+    # fill missing features
+    X = X.fillna(method='ffill')
+
     ids, Y = [], []
     if train:
         Y = X[label]
@@ -82,27 +78,9 @@ X_train = add_features(X_train)
 X_train, X_val, Y_train, Y_val = train_test_split(
     X_train, Y_train, test_size=0.2)
 
-# transform to DMatrix
-D_train = xgb.DMatrix(X_train, label=Y_train)
-D_val = xgb.DMatrix(X_val, label=Y_val)
-
-# define xgboost model
-param = {
-    'eta': 0.2,
-    'max_depth': 10,
-    'objective': 'binary:logistic',
-    'eval_metric': 'error'}
-epochs = 20
-
-# train
-model = xgb.train(param, D_train, epochs)
-
-# predict validation set
-preds = model.predict(D_val)
-
-# evaluate model on validation set and print metrics
-best_preds = np.asarray([np.argmax(line) for line in preds])
-print("Val. acccuracy = {}".format(accuracy_score(Y_val, best_preds)))
+classifier = classifierFactory("rf")  # one of: XG, RF
+classifier.train(X_train, Y_train)
+preds = classifier.test(X_val, Y_val)
 
 # predicting test set and create submission file
 with open("submission.txt", 'w') as outfile:
@@ -111,8 +89,6 @@ with open("submission.txt", 'w') as outfile:
     X_test, Y_train, ids = get_df("data/test.csv", train=False)
     X_test = add_features(X_test)
 
-    D_test = xgb.DMatrix(X_test)
-    preds = model.predict(D_test)
-
+    preds = classifier.test(X_test)
     for prob, id in zip(preds, ids):
         outfile.write(str(id) + ',' + str(int(round(prob))) + '\n')
