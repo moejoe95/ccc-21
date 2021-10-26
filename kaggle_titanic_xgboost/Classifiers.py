@@ -1,6 +1,7 @@
 import abc
 import xgboost as xgb
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn import metrics
 import numpy as np
 
@@ -17,6 +18,9 @@ class Classifier:
 
 
 class XGClassifier(Classifier):
+    """
+    XGBoost classifier.
+    """
 
     def __init__(self, params={
         "eta": 0.2,
@@ -45,6 +49,9 @@ class XGClassifier(Classifier):
 
 
 class RFClassifier(Classifier):
+    """
+    Random Forest classifier.
+    """
 
     def __init__(self, params={"trees": 100}):
         self.model = RandomForestClassifier(n_estimators=params["trees"])
@@ -60,10 +67,24 @@ class RFClassifier(Classifier):
         return preds
 
 
-def classifierFactory(classifier: str):
-    if classifier.lower() == "xg":
-        return XGClassifier()
-    elif classifier.lower() == "rf":
-        return RFClassifier()
-    else:
-        NotImplementedError(classifier + " not implemented")
+class ABClassifier(Classifier):
+    """
+    AdaBoost classifier.
+    """
+
+    def __init__(self, params={"max_depth": 3, "random_state": 0, "n_estimators": 3, "algorithm": "SAMME"}):
+        base_estimator = DecisionTreeClassifier(
+            max_depth=params["max_depth"], random_state=params["random_state"])
+        self.model = AdaBoostClassifier(base_estimator=base_estimator,
+                                        n_estimators=params["n_estimators"], algorithm=params["algorithm"],
+                                        random_state=params["random_state"])
+
+    def train(self, trainset, labels):
+        self.model.fit(trainset.values, labels.values)
+
+    def test(self, testset, labels=None):
+        preds = self.model.predict(testset.values)
+        if labels is not None:
+            print("accuracy: ",
+                  metrics.accuracy_score(labels, preds))
+        return preds

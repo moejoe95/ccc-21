@@ -6,15 +6,15 @@ Currently implemented: XGBOOST, Random Forest
 current Kaggle scores: 
     - XGBOOST: 0.77990
     - Random Forest 0.76555
+    - AdaBoost: 0.77511
 
 competition:
 https://www.kaggle.com/c/titanic/overview
 """
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
-from Classifiers import classifierFactory
+from Classifiers import XGClassifier, RFClassifier, ABClassifier
 
 id = "PassengerId"
 label = "Survived"
@@ -78,7 +78,7 @@ X_train = add_features(X_train)
 X_train, X_val, Y_train, Y_val = train_test_split(
     X_train, Y_train, test_size=0.2)
 
-classifier = classifierFactory("rf")  # one of: XG, RF
+classifier = ABClassifier()  # one of: XGClassifier, XGClassifier, RFClassifier
 classifier.train(X_train, Y_train)
 preds = classifier.test(X_val, Y_val)
 
