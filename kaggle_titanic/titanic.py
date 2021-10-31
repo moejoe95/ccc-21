@@ -1,20 +1,19 @@
 """
 Apply some standard ML algorithms to the kaggle titanic problem (binary classification).
 
-Currently implemented: XGBOOST, Random Forest
-
-current Kaggle scores: 
-    - XGBOOST: 0.77990
-    - Random Forest 0.76555
-    - AdaBoost: 0.77511
+Currently implemented: XGBOOST, Random Forest, AdaBoost, SVM, and an ensemble classifier
 
 competition:
 https://www.kaggle.com/c/titanic/overview
 """
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 from sklearn.preprocessing import LabelEncoder
-from Classifiers import XGClassifier, RFClassifier, ABClassifier
+from Classifiers import *
+
 
 id = "PassengerId"
 label = "Survived"
@@ -65,6 +64,10 @@ def add_features(df):
     label_encode = label_encode.apply(LabelEncoder().fit_transform)
     df = pd.concat([df, label_encode], axis=1)
 
+    # number of passengers sharing a ticket
+    df["shared_ticket"] = df.apply(lambda row: (
+        df["Ticket"] == row.Ticket).sum(), axis=1)
+
     # remove other categorical columns
     df = df.drop(categorical_cols, axis=1)
     return df
@@ -74,13 +77,17 @@ def add_features(df):
 X_train, Y_train, _ = get_df("data/train.csv", train=True)
 X_train = add_features(X_train)
 
-# split into train/validation data
-X_train, X_val, Y_train, Y_val = train_test_split(
-    X_train, Y_train, test_size=0.2)
+# print(X_train.head())
+# show feature correlation in train set
+# sns.heatmap((pd.concat([X_train, Y_train], axis=1).corr()), annot=True)
+# plt.show()
 
-classifier = ABClassifier()  # one of: XGClassifier, XGClassifier, RFClassifier
+# preprocess data
+X_train = preprocessing.scale(X_train)
+
+# one of: XGClassifier, ABClassifier, RFClassifier, SVMClassifier, EnsembleClassifier
+classifier = ABClassifier()
 classifier.train(X_train, Y_train)
-preds = classifier.test(X_val, Y_val)
 
 # predicting test set and create submission file
 with open("submission.txt", 'w') as outfile:
@@ -89,6 +96,7 @@ with open("submission.txt", 'w') as outfile:
     X_test, Y_train, ids = get_df("data/test.csv", train=False)
     X_test = add_features(X_test)
 
+    X_test = preprocessing.scale(X_test)
     preds = classifier.test(X_test)
     for prob, id in zip(preds, ids):
         outfile.write(str(id) + ',' + str(int(round(prob))) + '\n')
