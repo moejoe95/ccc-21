@@ -27,10 +27,6 @@ for n, line in enumerate(lines[2:]):
     else:
         results.append(False)
 
-# print(len([x for x in results if x == 1]))
-# for result in results:
-#     print(result)
-
 output_file = "output.csv"
 result = np.array(results)
 

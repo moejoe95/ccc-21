@@ -3,3 +3,7 @@
 .idea
 /data/level_3/train.csv
 /data/level_3/level_3_1.csv
+/data/level_4/level_4_1.csv
+/data/level_4/train.csv
+/level_4/model.hdf5
+/level_4/output.csv

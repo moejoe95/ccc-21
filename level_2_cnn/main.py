@@ -1,8 +1,6 @@
 import os
 
 import numpy as np
-import tensorflow.keras.losses as losses
-import tensorflow.keras.optimizers as optimizers
 from keras.layers import Conv2D, AveragePooling2D, Dropout
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split

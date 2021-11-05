@@ -2,17 +2,17 @@ import os
 
 import numpy as np
 import tensorflow.keras.losses as losses
-from matplotlib import pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
 from tensorflow import keras
 from tensorflow.keras import optimizers
 from tensorflow.keras.layers import Conv2D, AveragePooling2D, Dropout
+from matplotlib import pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 from tensorflow.keras.layers import Input, Flatten, Dense
 from tensorflow.keras.models import Sequential
 
-train_file = open(os.path.join('..', 'data', 'level_3', 'train.csv'), 'r')
-input_file = open(os.path.join('..', 'data', 'level_3', 'level_3_1.csv'), 'r')
+train_file = open(os.path.join('..', 'data', 'level_4', 'train.csv'), 'r')
+input_file = open(os.path.join('..', 'data', 'level_4', 'level_4_1.csv'), 'r')
 
 lines = train_file.readlines()
 
@@ -35,7 +35,7 @@ train_samples = np.asarray(train_samples)
 train_labels = np.asarray(train_labels)
 
 X, Y = shuffle(train_samples, train_labels, random_state=0)
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.1)
 
 plt.imshow(X_train[0, :, :], cmap='gray')
 plt.show()
@@ -43,21 +43,22 @@ plt.show()
 X_train = X_train / 255.
 X_test = X_test / 255.
 
+# model = get_vgg_mini((-1, 28, 196, 1), 1)
+# model = get_resnet_v1_20((-1, 28, 196, 1), 1)
 model = Sequential()
 model.add(Input((28, 196, 1)))
-model.add(Conv2D(filters=6, kernel_size=(3, 3), activation='relu'))
-model.add(AveragePooling2D())
-model.add(Conv2D(filters=16, kernel_size=(3, 3), activation='relu'))
-model.add(AveragePooling2D())
 model.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu'))
 model.add(AveragePooling2D())
-model.add(Dropout(0.3))
+model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
+model.add(AveragePooling2D())
+model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
+model.add(AveragePooling2D())
 model.add(Flatten())
-model.add(Dense(units=128, activation='relu'))
-model.add(Dropout(0.3))
-model.add(Dense(units=64, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(units=512, activation='relu'))
 model.add(Dropout(0.2))
-model.add(Dense(units=1))
+model.add(Dense(units=228, activation='relu'))
+model.add(Dense(units=1, activation="sigmoid"))
 
 model.compile(optimizer=optimizers.Adam(), loss=losses.MeanSquaredError(), metrics=[keras.metrics.RootMeanSquaredError()])
 model.fit(X_train, Y_train, epochs=100, validation_data=(X_test, Y_test))
