@@ -2,8 +2,9 @@ import os
 
 import numpy as np
 import tensorflow.keras.losses as losses
-import tensorflow.keras.optimizers as optimizers
-from tensorflow import metrics
+from tensorflow import keras
+from tensorflow.keras import metrics
+from tensorflow.keras import optimizers
 from tensorflow.keras.layers import Conv2D, AveragePooling2D, Dropout
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -57,17 +58,16 @@ model.add(Dense(units=128, activation='relu'))
 model.add(Dropout(0.3))
 model.add(Dense(units=64, activation='relu'))
 model.add(Dropout(0.2))
-model.add(Dense(units=1, activation='softmax'))
+model.add(Dense(units=1))
 
-model.compile(optimizer=optimizers.RMSprop, loss=losses.mean_squared_error, metrics=[metrics.RootMeanSquaredError()])
-model.fit(X_train, Y_train, epochs=5, validation_data=(X_test, Y_test))
+model.compile(optimizer=optimizers.Adam(), loss=losses.MeanSquaredError(), metrics=[keras.metrics.RootMeanSquaredError()])
+model.fit(X_train, Y_train, epochs=100, validation_data=(X_test, Y_test))
 
 test_loss, test_acc = model.evaluate(X_test, Y_test, )
 print(f"Test loss: {test_loss}")
 print(f"Test accuracy: {test_acc}")
 
 model.save("model.hdf5")
-
 
 lines = input_file.readlines()
 num_samples = int(lines[0].strip())
@@ -78,7 +78,7 @@ for n, line in enumerate(lines[1:]):
     sample = [int(x) for x in sample]
     samples.append(sample)
 
-X_test = np.array(samples).reshape(-1, 28, 84, 1)
+X_test = np.array(samples).reshape(-1, 28, 196, 1)
 X_test = X_test / 256.
 
 output_file = "output.csv"
@@ -86,5 +86,5 @@ predictions = model.predict(X_test).flatten()
 
 f = open(output_file, "w")
 for pred in predictions:
-    f.write("{:.4f}".format(pred))
+    f.write("{:.4f}\n".format(pred))
 f.close()
